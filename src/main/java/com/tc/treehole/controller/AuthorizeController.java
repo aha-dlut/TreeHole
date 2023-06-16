@@ -5,6 +5,7 @@ import com.tc.treehole.dto.GIthubUser;
 import com.tc.treehole.mapper.UserMapper;
 import com.tc.treehole.model.User;
 import com.tc.treehole.provider.GithubProvider;
+import com.tc.treehole.service.UserService;
 import okhttp3.Response;
 import org.apache.http.HttpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +29,6 @@ public class AuthorizeController {
     @Autowired
     private GithubProvider githubProvider;
 
-    @Autowired
-    private UserMapper userMapper;
 
     @Value("${github.client.id}")
     private String clientId;
@@ -40,12 +39,16 @@ public class AuthorizeController {
     @Value("${github.redirect.uri}")
     private String redirectUri;
 
+    @Autowired
+    UserService userService;
+
     @GetMapping("/callback")
     public String callback(@RequestParam(name = "code") String code,
                            @RequestParam(name = "state") String state,
                            HttpServletRequest request,
                            HttpServletResponse response
                            ){
+
         AccessTokenDTO accessTokenDTO = new AccessTokenDTO();
        accessTokenDTO.setCode(code);
        accessTokenDTO.setRedirect_uri(redirectUri);
@@ -56,24 +59,38 @@ public class AuthorizeController {
         GIthubUser githubUser =  githubProvider.getUser(accessToken);
 
         if(githubUser != null){
+            if(githubUser.getId() == null){
+                return "redirect:/";
+            }
             User user = new User();
             String token = UUID.randomUUID().toString();
             user.setToken(token);
             user.setName(githubUser.getName());
             user.setAccountId(String.valueOf(githubUser.getId()));
             user.setGmtCreate(System.currentTimeMillis());
-            user.setGmtModified(user.getGmtModified());
-
-            userMapper.insert(user);
+            user.setGmtModified(System.currentTimeMillis());
+            if(githubUser.getAvatar_url() == null){
+                user.setAvatarUrl("https://avatars.githubusercontent.com/u/128967553?v=4");
+            }else{
+                user.setAvatarUrl(githubUser.getAvatar_url());
+            }
+            userService.createOrUpdate(user);
             response.addCookie(new Cookie("token",token));
-            //登录成功，插入数据库，相当于写入session
 
-
-            request.getSession().setAttribute("user",githubUser);
             return "redirect:/";
         }else{
             return "redirect:/";
         }
 
+    }
+    @GetMapping("/logout")
+    public String logout(HttpServletRequest request,
+                         HttpServletResponse response
+                         ){
+        request.getSession().removeAttribute("user");
+        Cookie cookie = new Cookie("token",null);
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+        return "redirect:/";
     }
 }

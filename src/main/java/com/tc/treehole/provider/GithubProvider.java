@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import okhttp3.MediaType;
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.concurrent.TimeUnit;
+
 /*
 @author TanCheng
 @create 2023 -06 -04    
@@ -18,8 +20,7 @@ public class GithubProvider {
         MediaType mediaType
                 = MediaType.get("application/json; charset=utf-8");
 
-        OkHttpClient client = new OkHttpClient();
-
+        OkHttpClient client = new OkHttpClient.Builder().build();
         RequestBody body = RequestBody.create(mediaType, JSON.toJSONString(accessTokenDTO));
         Request request = new Request.Builder()
                 .url("https://github.com/login/oauth/access_token")

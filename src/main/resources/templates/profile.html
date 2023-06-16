@@ -1,51 +1,38 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>树洞</title>
+    <title th:text="${sectionName}"></title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
     <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
-    <link rel="stylesheet" href="css/treehole.css">
+    <link rel="stylesheet" href="/css/treehole.css">
     <!-- 可选的 Bootstrap 主题文件（一般不用引入） -->
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap-theme.min.css" integrity="sha384-6pzBo3FDv/PJ8r2KRkGHifhEocL+1X2rVCTTkUfGk7/0pbek5mMa1upzvWbrUbOZ" crossorigin="anonymous">
 
     <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
     <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
 
+    <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
 
 
 </head>
-<script type="application/javascript">
-    window.onload = function (){
-        var closable = window.localStorage.getItem("closable");
-        if(closable == "true"){
-            window.close();
-            window.localStorage.removeItem("closable");
-        }
-    }
-</script>
 <body>
 <div th:insert="~{navigation::nav}"></div>
-<div class="container-fluid main">
+<div class="container-fluid main profile">
     <div class="row">
         <div class="col-lg-9 col-md-12 col-xs-12">
-            <h2><span class="glyphicon glyphicon-list" aria-hidden="true">发现</span></h2>
-            <hr style="background: #3c3c3c">
-
+            <h2><span th:text="${sectionName}"></span></h2>
+            <hr>
             <div class="media" th:each="question : ${pagination.questions}">
                 <div class="media-left">
                     <a href="#">
                         <img class="media-object img-rounded"
-                        th:src="${question.user.avatarUrl}"
-                        >
+                             th:src="${question.user.avatarUrl}" >
                     </a>
                 </div>
                 <div class="media-body">
-                    <h4 class="media-heading">
-                        <a th:href="@{'/question/' + ${question.id}}" th:text="${question.title}"></a>
-                    </h4>
-                    <span th:text="${question.description}"></span><br>
+                    <h4 class="media-heading" th:text="${question.title}"></h4>
                     <span class="text-desc"><span th:text="${question.commentCount}"></span>
                         个回复·<span th:text="${question.viewCount}"></span>次浏览·<span th:text="${#dates.format(question.gmtCreate,'yyyy-MM-dd HH:mm')}"></span></span>
                 </div>
@@ -54,36 +41,40 @@
                 <ul class="pagination">
 
                     <li th:if="${pagination.showFirstPage}">
-                        <a th:href="@{/(page=1)}" aria-label="Previous">
+                        <a th:href="@{'/profile/' + ${section}(page=${1})}" aria-label="Previous">
                             <span aria-hidden="true">&lt;&lt;</span>
                         </a>
                     </li>
                     <li th:if="${pagination.showPrevious}">
-                        <a th:href="@{/(page=${pagination.page - 1})}" aria-label="Previous">
+                        <a th:href="@{'/profile/' + ${section}(page=${pagination.page-1})}" aria-label="Previous">
                             <span aria-hidden="true">&lt;</span>
                         </a>
                     </li>
                     <li th:each="page : ${pagination.pages}"  th:class="${pagination.page ==page}? 'active':''">
-                        <a th:href="@{/(page=${page})}" th:text="${page}">
+                        <a th:href="@{'/profile/' + ${section}(page=${page})}" th:text="${page}">
 
                         </a> </li>
                     <li th:if="${pagination.showNext}">
-                        <a th:href="@{/(page=${pagination.page + 1})}" aria-label="Previous">
+                        <a th:href="@{'/profile/' + ${section}(page=${pagination.page+1})}" aria-label="Previous">
                             <span aria-hidden="true">&gt;</span>
                         </a>
                     </li>
                     <li th:if="${pagination.showEndPage}">
-                        <a th:href="@{/(page=${pagination.totalPage})}" aria-label="Previous">
+                        <a th:href="@{'/profile/' + ${section}(page=${pagination.totalPage)}" aria-label="Previous">
                             <span aria-hidden="true">&gt;&gt;</span>
                         </a>
                     </li>
                 </ul>
             </nav>
-
-
         </div>
         <div class="col-lg-3 col-md-12 col-xs-12">
-            <h3>热门话题</h3>
+            <div class="list-group section">
+                <a href="/profile/questions" th:class="${section=='questions'}?'active list-group-item':'list-group-item'">我的问题</a>
+                <a href="/profile/replies" th:class="${section=='replies'}?'active list-group-item':'list-group-item'">
+                    最新回复
+                    <span class="badge">14</span>
+                </a>
+            </div>
         </div>
 
     </div>
