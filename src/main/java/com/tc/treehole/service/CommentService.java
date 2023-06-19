@@ -2,6 +2,8 @@ package com.tc.treehole.service;
 
 import com.tc.treehole.dto.CommentNotCreateDTO;
 import com.tc.treehole.enums.CommentTypeEnum;
+import com.tc.treehole.enums.NotificationStatusEnum;
+import com.tc.treehole.enums.NotificationTypeEnum;
 import com.tc.treehole.exception.CustomizeErrorCode;
 import com.tc.treehole.exception.CustomizeException;
 import com.tc.treehole.mapper.*;
@@ -29,6 +31,8 @@ public class CommentService {
     private QuestionMapper questionMapper;
     @Autowired
     private QuestionExtMapper questionExtMapper;
+    @Autowired
+    private NotificationMapper notificationMapper;
 
     @Autowired
     private UserMapper userMapper;
@@ -37,7 +41,7 @@ public class CommentService {
     private CommentExtMapper commentExtMapper;
 
     @Transactional
-    public void insert(Comment comment) {
+    public void insert(Comment comment, User commentator) {
         if (comment.getParentId() == null || comment.getParentId() == 0) {
             throw new CustomizeException(CustomizeErrorCode.TARGET_PARAM_NOT_FOUND);
         }
@@ -50,11 +54,19 @@ public class CommentService {
             if (commentDB == null) {
                 throw new CustomizeException(CustomizeErrorCode.COMMENT_NOT_FOUND);
             }
+            // 回复问题
+            Question questionDB = questionMapper.selectByPrimaryKey(commentDB.getParentId());
+            if (questionDB == null) {
+                throw new CustomizeException(CustomizeErrorCode.QUESTION_NOT_FOUND);
+            }
             comment.setCommentCount(0);
 
             commentMapper.insert(comment);
             commentDB.setCommentCount(1);
             commentExtMapper.incCommentCount(commentDB);
+
+            //通知
+            createNotify(comment,commentDB.getCommentator(),commentator.getName(),questionDB.getTitle(),NotificationTypeEnum.REPLY_COMMENT,questionDB.getId());
         } else {
             // 回复问题
             Question questionDB = questionMapper.selectByPrimaryKey(comment.getParentId());
@@ -64,8 +76,22 @@ public class CommentService {
             commentMapper.insert(comment);
             questionDB.setCommentCount(1);
             questionExtMapper.incComment(questionDB);
+
+            createNotify(comment,questionDB.getCreator(),commentator.getName(),questionDB.getTitle(),NotificationTypeEnum.REPLY_QUESTION,questionDB.getId());
         }
 
+    }
+    private void createNotify(Comment comment, Integer receiver, String notifierName, String outerTitle, NotificationTypeEnum notificationType,Integer outerId) {
+        Notification notification = new Notification();
+        notification.setGmtCreate(System.currentTimeMillis());
+        notification.setType(notificationType.getType());
+        notification.setOuterid(outerId);
+        notification.setNotifier(comment.getCommentator());
+        notification.setStatus(NotificationStatusEnum.UNREAD.getStatus());
+        notification.setReceiver(receiver);
+        notification.setNotifierName(notifierName);
+        notification.setOuterTitle(outerTitle);
+        notificationMapper.insert(notification);
     }
 
     public List<CommentNotCreateDTO> listByTargetId(Integer id, CommentTypeEnum type) {
@@ -100,4 +126,6 @@ public class CommentService {
 
         return commentNotCreateDTOS;
     }
+
+
 }

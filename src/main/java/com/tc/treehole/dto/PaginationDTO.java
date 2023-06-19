@@ -10,8 +10,8 @@ import java.util.List;
 @create 2023 -06 -11    
 */
 @Data
-public class PaginationDTO {
-    private List<QuestionDTO> questions;
+public class PaginationDTO<T> {
+    private List<T> data;
     private boolean showPrevious;
     private boolean showFirstPage;
     private boolean showNext;
@@ -33,9 +33,6 @@ public class PaginationDTO {
                 pages.add(page + i);
             }
         }
-
-
-
         //是否展示前一页
         if(page == 1){
             showPrevious = false;
